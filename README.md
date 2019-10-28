@@ -12,7 +12,7 @@ Output looks vaguely like this:
 
 ## Installation & running
 
-```$ pip install```
+```$ pip install -r requirements.txt```
 
 Create .env file with the following entries:
 ```
