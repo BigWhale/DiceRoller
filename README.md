@@ -6,6 +6,10 @@ You'll have to create a Discord application and a bot and then run this
 program with the credentials you got from Discord. There are plenty of
 manuals on the internet on how to do this.
 
+Output looks vaguely like this:
+
+![Dice Roller output](https://lubica.net/diceroller/rolls.png)
+
 ## Installation & running
 
 ```$ pip install```
