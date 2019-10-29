@@ -13,6 +13,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 IMAGE_URL = os.getenv('IMAGE_URL')
+GM_ROLE = os.getenv('GM_ROLE')
 
 #
 # Discord has some strange color definitions
@@ -51,6 +52,11 @@ colors = {
 
 # This is our bot
 class DiceRoller(commands.Bot):
+
+    churn_count = 0
+    churn_channel = None
+    gm_channel = None
+
     #
     # When everything is ready, just print out some info.
     #
@@ -88,6 +94,13 @@ async def bot_roll(ctx, arg: str = '3d6'):
         total = sum(roll_result)
         if arg == '3d6':  # Print drama dice separately and check if you stunt points are generated
             sp = False
+            #
+            # Check for SP and churn increase
+            #
+            if roll_result[2] == 6:
+                bot.churn_count += 1
+                await bot.gm_channel.send(f'Churn increased, {ctx.author.name} rolled six.\n\n'
+                                          f'Churn is now at {bot.churn_count}.')
             if roll_result[0] == roll_result[1] or roll_result[0] == roll_result[2] or roll_result[1] == roll_result[2]:
                 sp = True
 
@@ -104,7 +117,7 @@ async def bot_roll(ctx, arg: str = '3d6'):
             desc += f'\n'
             desc += f'Total: **[ {total} ]**\n'
     else:
-        desc = f'\n\nRoll result: **[ {roll_result} ]**\n\n'
+        desc = f'\n\nRoll result: **[ {roll_result} ]**\n'
 
     resp = discord.Embed(
         description=desc,
@@ -118,6 +131,122 @@ async def bot_roll(ctx, arg: str = '3d6'):
 
     resp.set_thumbnail(url=f'{IMAGE_URL}/dice.png' if IMAGE_URL else '')
     await ctx.send(embed=resp)
+
+
+@bot.command(name='churn_ch', help='Sets current churn channel and resets churn.')
+async def bot_churn_ch(ctx, arg: str):
+    if GM_ROLE in [y.name for y in ctx.author.roles]:
+        channel = discord.utils.get(bot.get_all_channels(), name=arg)
+        bot.churn_channel = channel
+        await ctx.send(f'Churn events are now registered on #{arg}.')
+    else:
+        await ctx.send(f'Command available only for GMs.')
+
+
+@bot.command(name='gm_ch', help='Sets current GM channel.')
+async def bot_gm_ch(ctx, arg: str):
+    if GM_ROLE in [y.name for y in ctx.author.roles]:
+        channel = discord.utils.get(bot.get_all_channels(), name=arg)
+        bot.gm_channel = channel
+        await ctx.send(f'GM events are now registered on  #{arg}.')
+    else:
+        await ctx.send(f'Command available only for GMs.')
+
+
+@bot.command(name='add_churn', help='Increases churn.')
+async def bot_add_churn(ctx):
+    if ctx.message.channel == bot.gm_channel:
+        if GM_ROLE in [y.name for y in ctx.author.roles]:
+            bot.churn_count += 1
+
+            desc = f'Churn is now at {bot.churn_count}.'
+
+            resp = discord.Embed(
+                description=desc,
+                colour=colors['RED']
+            )
+
+            resp.set_author(
+                name=f'Churn Increased!',
+            )
+
+            await ctx.send(embed=resp)
+        else:
+            await ctx.send(f'Command available only to GMs.')
+
+
+@bot.command(name='set_churn', help='Sets churn value.')
+async def bot_set_churn(ctx, arg: int):
+    if ctx.message.channel == bot.gm_channel:
+        if GM_ROLE in [y.name for y in ctx.author.roles]:
+            bot.churn_count = arg
+            await ctx.send(f'Churn is now set to {bot.churn_count}.')
+        else:
+            await ctx.send(f'Command available only to GMs.')
+
+
+@bot.command(name='sub_churn', help='Decreases churn.')
+async def bot_sub_churn(ctx):
+    if ctx.message.channel == bot.gm_channel:
+        if GM_ROLE in [y.name for y in ctx.author.roles]:
+            if bot.churn_count > 0:
+                bot.churn_count -= 1
+
+                desc = f'Churn is now at {bot.churn_count}.'
+
+                resp = discord.Embed(
+                    description=desc,
+                    colour=colors['GREEN']
+                )
+
+                resp.set_author(
+                    name=f'Churn Decreased.',
+                )
+
+                await ctx.send(embed=resp)
+            else:
+                await ctx.send(f'Churn already at zero.')
+        else:
+            await ctx.send(f'Command available only to GMs.')
+
+
+@bot.command(name='reset_churn', help='Resets churn to zero.')
+async def bot_reset_churn(ctx):
+    if ctx.message.channel == bot.gm_channel:
+        if GM_ROLE in [y.name for y in ctx.author.roles]:
+            if bot.gm_channel and ctx.message.channel == bot.gm_channel:
+                bot.churn_count = 0
+                await ctx.send(f'Churn reset.')
+        else:
+            await ctx.send(f'Command available only to GMs.')
+
+
+@bot.command(name='churn', help='Shows current churn value.')
+async def bot_show_churn(ctx):
+    if ctx.message.channel == bot.gm_channel:
+        desc = f'Churn is currently at {bot.churn_count}.'
+
+        if bot.churn_count < 10:
+            colour = colors['GREEN']
+        elif bot.churn_count < 20:
+            colour = colors['ORANGE']
+        elif bot.churn_count < 30:
+            colour = colors['RED']
+        elif bot.churn_count == 30:
+            colour = colors['LUMINOUS_VIVID_PINK']
+        else:
+            colour = colors['GREEN']
+
+        resp = discord.Embed(
+            description=desc,
+            colour=colour
+        )
+
+        resp.set_author(
+            name=f'Churn report',
+        )
+        await ctx.send(embed=resp)
+
 
 #
 # Run bot RUN!
