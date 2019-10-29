@@ -97,7 +97,7 @@ async def bot_roll(ctx, arg: str = '3d6'):
             #
             # Check for SP and churn increase
             #
-            if roll_result[2] == 6:
+            if roll_result[2] == 6 and ctx.message.channel == bot.churn_channel and bot.gm_channel:
                 bot.churn_count += 1
                 await bot.gm_channel.send(f'Churn increased, {ctx.author.name} rolled six.\n\n'
                                           f'Churn is now at {bot.churn_count}.')
