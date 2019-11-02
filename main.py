@@ -50,6 +50,10 @@ colors = {
 }
 
 
+def is_gm(ctx):
+    return True if GM_ROLE in [y.name for y in ctx.author.roles] else False
+
+
 # This is our bot
 class DiceRoller(commands.Bot):
 
@@ -97,7 +101,7 @@ async def bot_roll(ctx, arg: str = '3d6'):
             #
             # Check for SP and churn increase
             #
-            if roll_result[2] == 6 and ctx.message.channel == bot.churn_channel and bot.gm_channel:
+            if not is_gm(ctx) and roll_result[2] == 6 and ctx.message.channel == bot.churn_channel and bot.gm_channel:
                 bot.churn_count += 1
                 await bot.gm_channel.send(f'Churn increased, {ctx.author.name} rolled six.\n\n'
                                           f'Churn is now at {bot.churn_count}.')
@@ -126,7 +130,7 @@ async def bot_roll(ctx, arg: str = '3d6'):
 
     resp.set_author(
         name=f'{ctx.author.name} rolled {arg}',
-        icon_url=f'{IMAGE_URL}/dice.png' if IMAGE_URL else ''
+        icon_url=f'{ctx.author.avatar_url}'
     )
 
     resp.set_thumbnail(url=f'{IMAGE_URL}/dice.png' if IMAGE_URL else '')
@@ -135,7 +139,7 @@ async def bot_roll(ctx, arg: str = '3d6'):
 
 @bot.command(name='churn_ch', help='Sets current churn channel and resets churn.')
 async def bot_churn_ch(ctx, arg: str):
-    if GM_ROLE in [y.name for y in ctx.author.roles]:
+    if is_gm(ctx):
         channel = discord.utils.get(bot.get_all_channels(), name=arg)
         bot.churn_channel = channel
         await ctx.send(f'Churn events are now registered on #{arg}.')
@@ -145,7 +149,7 @@ async def bot_churn_ch(ctx, arg: str):
 
 @bot.command(name='gm_ch', help='Sets current GM channel.')
 async def bot_gm_ch(ctx, arg: str):
-    if GM_ROLE in [y.name for y in ctx.author.roles]:
+    if is_gm(ctx):
         channel = discord.utils.get(bot.get_all_channels(), name=arg)
         bot.gm_channel = channel
         await ctx.send(f'GM events are now registered on  #{arg}.')
@@ -156,7 +160,7 @@ async def bot_gm_ch(ctx, arg: str):
 @bot.command(name='add_churn', help='Increases churn.')
 async def bot_add_churn(ctx):
     if ctx.message.channel == bot.gm_channel:
-        if GM_ROLE in [y.name for y in ctx.author.roles]:
+        if is_gm(ctx):
             bot.churn_count += 1
 
             desc = f'Churn is now at {bot.churn_count}.'
@@ -178,7 +182,7 @@ async def bot_add_churn(ctx):
 @bot.command(name='set_churn', help='Sets churn value.')
 async def bot_set_churn(ctx, arg: int):
     if ctx.message.channel == bot.gm_channel:
-        if GM_ROLE in [y.name for y in ctx.author.roles]:
+        if is_gm(ctx):
             bot.churn_count = arg
             await ctx.send(f'Churn is now set to {bot.churn_count}.')
         else:
@@ -188,7 +192,7 @@ async def bot_set_churn(ctx, arg: int):
 @bot.command(name='sub_churn', help='Decreases churn.')
 async def bot_sub_churn(ctx):
     if ctx.message.channel == bot.gm_channel:
-        if GM_ROLE in [y.name for y in ctx.author.roles]:
+        if is_gm(ctx):
             if bot.churn_count > 0:
                 bot.churn_count -= 1
 
@@ -213,7 +217,7 @@ async def bot_sub_churn(ctx):
 @bot.command(name='reset_churn', help='Resets churn to zero.')
 async def bot_reset_churn(ctx):
     if ctx.message.channel == bot.gm_channel:
-        if GM_ROLE in [y.name for y in ctx.author.roles]:
+        if is_gm(ctx):
             if bot.gm_channel and ctx.message.channel == bot.gm_channel:
                 bot.churn_count = 0
                 await ctx.send(f'Churn reset.')
