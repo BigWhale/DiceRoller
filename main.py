@@ -14,6 +14,8 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 IMAGE_URL = os.getenv('IMAGE_URL')
 GM_ROLE = os.getenv('GM_ROLE')
+GM_CHANNEL = os.getenv('GM_CHANNEL')
+CHURN_CHANNEL = os.getenv('CHURN_CHANNEL')
 
 #
 # Discord has some strange color definitions
@@ -71,6 +73,19 @@ class DiceRoller(commands.Bot):
                   f'{guild.name}(id: {guild.id})\n')
             print('Bot is running.')
             print('Exit with CTRL-C or by restarting your server (or the whole hypervisor if you have doubts).')
+
+        #
+        # Set the defaults
+        #
+        channel = discord.utils.get(bot.get_all_channels(), name=GM_CHANNEL)
+        if channel:
+            print(f'GM channel: {channel.name}')
+            bot.gm_channel = channel
+
+        churn = discord.utils.get(bot.get_all_channels(), name=CHURN_CHANNEL)
+        if churn:
+            print(f'Churn channel: {churn.name}')
+            bot.churn_channel = churn
 
     #
     # We only have one command, but we might get more commands and some will have required parameters, then you'll be
